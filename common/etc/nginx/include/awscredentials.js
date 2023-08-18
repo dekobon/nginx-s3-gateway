@@ -114,7 +114,7 @@ function readCredentials(r) {
   }
   if (
     'variables' in r &&
-    r.variables.cache_instance_credentials_enabled == '1'
+    r.variables.cache_instance_credentials_enabled === '1'
   ) {
     return _readCredentialsFromKeyValStore(r);
   } else {
@@ -211,7 +211,7 @@ function writeCredentials(r, credentials) {
 
   if (
     'variables' in r &&
-    r.variables.cache_instance_credentials_enabled == '1'
+    r.variables.cache_instance_credentials_enabled === '1'
   ) {
     _writeCredentialsToKeyValStore(r, credentials);
   } else {

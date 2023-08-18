@@ -190,7 +190,7 @@ function _buildSignatureV4(
    * operations that have to be performed per incoming request. The signing
    * key expires every day, so our cache key can persist for 24 hours safely.
    */
-  if ('variables' in r && r.variables.cache_signing_key_enabled == '1') {
+  if ('variables' in r && r.variables.cache_signing_key_enabled === '1') {
     // cached value is in the format: [eightDigitDate]:[signingKeyHash]
     const cached =
       'signing_key_hash' in r.variables ? r.variables.signing_key_hash : '';
