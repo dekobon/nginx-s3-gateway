@@ -1,7 +1,9 @@
 {
   "scripts": {
-    "prettier": "prettier --check --write common/etc/nginx/include",
+    "prettier": "npx prettier --check common/etc/nginx/include",
+    "prettier-fix": "npx prettier --check --write common/etc/nginx/include",
     "eslint": "npx eslint .",
+    "eslint-fix": "npx eslint --fix .",
     "docs": "npx jsdoc -c '.jsdocrc.json'"
   },
   "devDependencies": {
