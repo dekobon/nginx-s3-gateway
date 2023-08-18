@@ -28,66 +28,71 @@
  * @property {string|undefined} queryParams - query parameters to use with S3 request
  */
 
-import awscred from "./awscredentials.js";
-import awssig2 from "./awssig2.js";
-import awssig4 from "./awssig4.js";
-import utils from "./utils.js";
+import awscred from './awscredentials.js'
+import awssig2 from './awssig2.js'
+import awssig4 from './awssig4.js'
+import utils from './utils.js'
 
-_requireEnvVars('S3_BUCKET_NAME');
-_requireEnvVars('S3_SERVER');
-_requireEnvVars('S3_SERVER_PROTO');
-_requireEnvVars('S3_SERVER_PORT');
-_requireEnvVars('S3_REGION');
-_requireEnvVars('AWS_SIGS_VERSION');
-_requireEnvVars('S3_STYLE');
-
+_requireEnvVars('S3_BUCKET_NAME')
+_requireEnvVars('S3_SERVER')
+_requireEnvVars('S3_SERVER_PROTO')
+_requireEnvVars('S3_SERVER_PORT')
+_requireEnvVars('S3_REGION')
+_requireEnvVars('AWS_SIGS_VERSION')
+_requireEnvVars('S3_STYLE')
 
 /**
  * Flag indicating debug mode operation. If true, additional information
  * about signature generation will be logged.
  * @type {boolean}
  */
-const ALLOW_LISTING = utils.parseBoolean(process.env['ALLOW_DIRECTORY_LIST']);
+const ALLOW_LISTING = utils.parseBoolean(process.env['ALLOW_DIRECTORY_LIST'])
 /**
  * Flag indicating if index pages should be provided for directories.
  * @type {boolean}
  * */
-const PROVIDE_INDEX_PAGE = utils.parseBoolean(process.env['PROVIDE_INDEX_PAGE']);
+const PROVIDE_INDEX_PAGE = utils.parseBoolean(process.env['PROVIDE_INDEX_PAGE'])
 /**
  * Flag that when enabled checks if requesting a folder is without trailing slash, and return 302
  * appending a slash to it when using for static site hosting.
  * @type {boolean}
  * */
-const APPEND_SLASH = utils.parseBoolean(process.env['APPEND_SLASH_FOR_POSSIBLE_DIRECTORY']);
+const APPEND_SLASH = utils.parseBoolean(
+  process.env['APPEND_SLASH_FOR_POSSIBLE_DIRECTORY']
+)
 /**
  * Flag indicating if 404 should be returned when requesting an empty bucket.
  * @type {boolean}
  * */
-const FOUR_O_FOUR_ON_EMPTY_BUCKET = utils.parseBoolean(process.env['FOUR_O_FOUR_ON_EMPTY_BUCKET']);
+const FOUR_O_FOUR_ON_EMPTY_BUCKET = utils.parseBoolean(
+  process.env['FOUR_O_FOUR_ON_EMPTY_BUCKET']
+)
 /**
  * Flag indicating why type of S3 URI to use. Valid values are 'virtual' and
  * 'path'. If not set, 'virtual' is assumed.
  * @type {string}
  * */
-const S3_STYLE = process.env['S3_STYLE'];
+const S3_STYLE = process.env['S3_STYLE']
 /**
  * Additional header prefixes to strip from the response before sending to the
  * client. This is useful for removing headers that may contain sensitive
  * information.
  * @type {Array<String>}
  * */
-const ADDITIONAL_HEADER_PREFIXES_TO_STRIP = utils.parseArray(process.env['HEADER_PREFIXES_TO_STRIP']);
+const ADDITIONAL_HEADER_PREFIXES_TO_STRIP = utils.parseArray(
+  process.env['HEADER_PREFIXES_TO_STRIP']
+)
 /**
  * Default filename for index pages to be read off of the backing object store.
  * @type {string}
  * */
-const INDEX_PAGE = "index.html";
+const INDEX_PAGE = 'index.html'
 
 /**
  * Constant defining the service requests are being signed for.
  * @type {string}
  */
-const SERVICE = 's3';
+const SERVICE = 's3'
 
 /**
  * Transform the headers returned from S3 such that there isn't information
@@ -95,32 +100,37 @@ const SERVICE = 's3';
  * @param r {NginxHTTPRequest} HTTP request
  */
 function editHeaders(r) {
-    const isDirectoryHeadRequest =
-        ALLOW_LISTING &&
-        r.method === 'HEAD' &&
-        _isDirectory(decodeURIComponent(r.variables.uri_path));
+  const isDirectoryHeadRequest =
+    ALLOW_LISTING &&
+    r.method === 'HEAD' &&
+    _isDirectory(decodeURIComponent(r.variables.uri_path))
 
-    /* Strips all x-amz- headers from the output HTTP headers so that the
-     * requesters to the gateway will not know you are proxying S3. */
-    if ('headersOut' in r) {
-        for (const key in r.headersOut) {
-            /* We delete all headers when it is a directory head request because
-             * none of the information is relevant for passing on via a gateway. */
-            if (isDirectoryHeadRequest) {
-                delete r.headersOut[key];
-            } else if (_isHeaderToBeStripped(key.toLowerCase(), ADDITIONAL_HEADER_PREFIXES_TO_STRIP)) {
-                delete r.headersOut[key];
-            }
-        }
-
-        /* Transform content type returned on HEAD requests for directories
-         * if directory listing is enabled. If you change the output format
-         * for the XSL stylesheet from HTML to something else, you will
-         * want to change the content type below. */
-        if (isDirectoryHeadRequest) {
-            r.headersOut['Content-Type'] = 'text/html; charset=utf-8'
-        }
+  /* Strips all x-amz- headers from the output HTTP headers so that the
+   * requesters to the gateway will not know you are proxying S3. */
+  if ('headersOut' in r) {
+    for (const key in r.headersOut) {
+      /* We delete all headers when it is a directory head request because
+       * none of the information is relevant for passing on via a gateway. */
+      if (isDirectoryHeadRequest) {
+        delete r.headersOut[key]
+      } else if (
+        _isHeaderToBeStripped(
+          key.toLowerCase(),
+          ADDITIONAL_HEADER_PREFIXES_TO_STRIP
+        )
+      ) {
+        delete r.headersOut[key]
+      }
     }
+
+    /* Transform content type returned on HEAD requests for directories
+     * if directory listing is enabled. If you change the output format
+     * for the XSL stylesheet from HTML to something else, you will
+     * want to change the content type below. */
+    if (isDirectoryHeadRequest) {
+      r.headersOut['Content-Type'] = 'text/html; charset=utf-8'
+    }
+  }
 }
 
 /**
@@ -131,18 +141,18 @@ function editHeaders(r) {
  * @returns {boolean} true if header should be removed
  */
 function _isHeaderToBeStripped(headerName, additionalHeadersToStrip) {
-    if (headerName.indexOf('x-amz-', 0) >= 0) {
-        return true;
-    }
+  if (headerName.indexOf('x-amz-', 0) >= 0) {
+    return true
+  }
 
-    for (let i = 0; i < additionalHeadersToStrip.length; i++) {
-        const headerToStrip = additionalHeadersToStrip[i];
-        if (headerName.indexOf(headerToStrip, 0) >= 0) {
-            return true;
-        }
+  for (let i = 0; i < additionalHeadersToStrip.length; i++) {
+    const headerToStrip = additionalHeadersToStrip[i]
+    if (headerName.indexOf(headerToStrip, 0) >= 0) {
+      return true
     }
+  }
 
-    return false;
+  return false
 }
 
 /**
@@ -152,8 +162,8 @@ function _isHeaderToBeStripped(headerName, additionalHeadersToStrip) {
  * @param r {NginxHTTPRequest} HTTP request object (not used, but required for NGINX configuration)
  * @returns {string} RFC2616 timestamp
  */
-function s3date(r) {
-    return awscred.Now().toUTCString();
+function s3date(_r) {
+  return awscred.Now().toUTCString()
 }
 
 /**
@@ -164,29 +174,37 @@ function s3date(r) {
  * @returns {string} AWS authentication signature
  */
 function s3auth(r) {
-    const bucket = process.env['S3_BUCKET_NAME'];
-    const region = process.env['S3_REGION'];
-    let server;
-    if (S3_STYLE === 'path') {
-        server = process.env['S3_SERVER'] + ':' + process.env['S3_SERVER_PORT'];
-    } else {
-        server = process.env['S3_SERVER'];
-    }
-    const sigver = process.env['AWS_SIGS_VERSION'];
+  const bucket = process.env['S3_BUCKET_NAME']
+  const region = process.env['S3_REGION']
+  let server
+  if (S3_STYLE === 'path') {
+    server = process.env['S3_SERVER'] + ':' + process.env['S3_SERVER_PORT']
+  } else {
+    server = process.env['S3_SERVER']
+  }
+  const sigver = process.env['AWS_SIGS_VERSION']
 
-    let signature;
+  let signature
 
-    const credentials = awscred.readCredentials(r);
-    if (sigver == '2') {
-        let req = _s3ReqParamsForSigV2(r, bucket);
-        signature = awssig2.signatureV2(r, req.uri, req.httpDate, credentials);
-    } else {
-        let req = _s3ReqParamsForSigV4(r, bucket, server);
-        signature = awssig4.signatureV4(r, awscred.Now(), region, SERVICE,
-            req.uri, req.queryParams, req.host, credentials);
-    }
+  const credentials = awscred.readCredentials(r)
+  if (sigver == '2') {
+    let req = _s3ReqParamsForSigV2(r, bucket)
+    signature = awssig2.signatureV2(r, req.uri, req.httpDate, credentials)
+  } else {
+    let req = _s3ReqParamsForSigV4(r, bucket, server)
+    signature = awssig4.signatureV4(
+      r,
+      awscred.Now(),
+      region,
+      SERVICE,
+      req.uri,
+      req.queryParams,
+      req.host,
+      credentials
+    )
+  }
 
-    return signature;
+  return signature
 }
 
 /**
@@ -199,21 +217,24 @@ function s3auth(r) {
  * @private
  */
 function _s3ReqParamsForSigV2(r, bucket) {
-    /* If the source URI is a directory, we are sending to S3 a query string
-     * local to the root URI, so this is what we need to encode within the
-     * string to sign. For example, if we are requesting /bucket/dir1/ from
-     * nginx, then in S3 we need to request /?delimiter=/&prefix=dir1/
-     * Thus, we can't put the path /dir1/ in the string to sign. */
-    let uri = _isDirectory(r.variables.uri_path) ? '/' : r.variables.uri_path;
-    // To return index pages + index.html
-    if (utils.parseBoolean(r.variables.forIndexPage) && _isDirectory(r.variables.uri_path)){
-        uri = r.variables.uri_path + INDEX_PAGE
-    }
+  /* If the source URI is a directory, we are sending to S3 a query string
+   * local to the root URI, so this is what we need to encode within the
+   * string to sign. For example, if we are requesting /bucket/dir1/ from
+   * nginx, then in S3 we need to request /?delimiter=/&prefix=dir1/
+   * Thus, we can't put the path /dir1/ in the string to sign. */
+  let uri = _isDirectory(r.variables.uri_path) ? '/' : r.variables.uri_path
+  // To return index pages + index.html
+  if (
+    utils.parseBoolean(r.variables.forIndexPage) &&
+    _isDirectory(r.variables.uri_path)
+  ) {
+    uri = r.variables.uri_path + INDEX_PAGE
+  }
 
-    return {
-        uri: '/' + bucket + uri,
-        httpDate: s3date(r)
-    };
+  return {
+    uri: '/' + bucket + uri,
+    httpDate: s3date(r),
+  }
 }
 
 /**
@@ -227,30 +248,34 @@ function _s3ReqParamsForSigV2(r, bucket) {
  * @private
  */
 function _s3ReqParamsForSigV4(r, bucket, server) {
-    let host = server;
-    if (S3_STYLE === 'virtual' || S3_STYLE === 'default' || S3_STYLE === undefined) {
-        host = bucket + '.' + host;
-    }
-    const baseUri = s3BaseUri(r);
-    const computed_url = !utils.parseBoolean(r.variables.forIndexPage)
-        ? r.variables.uri_path
-        : r.variables.uri_path + INDEX_PAGE;
-    const queryParams = _s3DirQueryParams(computed_url, r.method);
-    let uri;
-    if (queryParams.length > 0) {
-        if (baseUri.length > 0) {
-            uri = baseUri;
-        } else {
-            uri = '/';
-        }
+  let host = server
+  if (
+    S3_STYLE === 'virtual' ||
+    S3_STYLE === 'default' ||
+    S3_STYLE === undefined
+  ) {
+    host = bucket + '.' + host
+  }
+  const baseUri = s3BaseUri(r)
+  const computed_url = !utils.parseBoolean(r.variables.forIndexPage)
+    ? r.variables.uri_path
+    : r.variables.uri_path + INDEX_PAGE
+  const queryParams = _s3DirQueryParams(computed_url, r.method)
+  let uri
+  if (queryParams.length > 0) {
+    if (baseUri.length > 0) {
+      uri = baseUri
     } else {
-        uri = s3uri(r);
+      uri = '/'
     }
-    return {
-        host: host,
-        uri: uri,
-        queryParams: queryParams
-    };
+  } else {
+    uri = s3uri(r)
+  }
+  return {
+    host: host,
+    uri: uri,
+    queryParams: queryParams,
+  }
 }
 
 /**
@@ -262,17 +287,17 @@ function _s3ReqParamsForSigV4(r, bucket, server) {
  * @returns {string} start of the file path for the S3 object URI
  */
 function s3BaseUri(r) {
-    const bucket = process.env['S3_BUCKET_NAME'];
-    let basePath;
+  const bucket = process.env['S3_BUCKET_NAME']
+  let basePath
 
-    if (S3_STYLE === 'path') {
-        utils.debug_log(r, 'Using path style uri : ' + '/' + bucket);
-        basePath = '/' + bucket;
-    } else {
-        basePath = '';
-    }
+  if (S3_STYLE === 'path') {
+    utils.debug_log(r, 'Using path style uri : ' + '/' + bucket)
+    basePath = '/' + bucket
+  } else {
+    basePath = ''
+  }
 
-    return basePath;
+  return basePath
 }
 
 /**
@@ -282,28 +307,28 @@ function s3BaseUri(r) {
  * @returns {string} uri for s3 request
  */
 function s3uri(r) {
-    let uriPath = r.variables.uri_path;
-    const basePath = s3BaseUri(r);
-    let path;
+  let uriPath = r.variables.uri_path
+  const basePath = s3BaseUri(r)
+  let path
 
-    // Create query parameters only if directory listing is enabled.
-    if (ALLOW_LISTING && !utils.parseBoolean(r.variables.forIndexPage)) {
-        const queryParams = _s3DirQueryParams(uriPath, r.method);
-        if (queryParams.length > 0) {
-            path = basePath + '?' + queryParams;
-        } else {
-            path = _escapeURIPath(basePath + uriPath);
-        }
+  // Create query parameters only if directory listing is enabled.
+  if (ALLOW_LISTING && !utils.parseBoolean(r.variables.forIndexPage)) {
+    const queryParams = _s3DirQueryParams(uriPath, r.method)
+    if (queryParams.length > 0) {
+      path = basePath + '?' + queryParams
     } else {
-        // This is a path that will resolve to an index page
-        if (PROVIDE_INDEX_PAGE  && _isDirectory(uriPath) ) {
-            uriPath += INDEX_PAGE;
-        }
-        path = _escapeURIPath(basePath + uriPath);
+      path = _escapeURIPath(basePath + uriPath)
     }
+  } else {
+    // This is a path that will resolve to an index page
+    if (PROVIDE_INDEX_PAGE && _isDirectory(uriPath)) {
+      uriPath += INDEX_PAGE
+    }
+    path = _escapeURIPath(basePath + uriPath)
+  }
 
-    utils.debug_log(r, 'S3 Request URI: ' + r.method + ' ' + path);
-    return path;
+  utils.debug_log(r, 'S3 Request URI: ' + r.method + ' ' + path)
+  return path
 }
 
 /**
@@ -316,26 +341,28 @@ function s3uri(r) {
  * @private
  */
 function _s3DirQueryParams(uriPath, method) {
-    if (!_isDirectory(uriPath) || method !== 'GET') {
-        return '';
-    }
+  if (!_isDirectory(uriPath) || method !== 'GET') {
+    return ''
+  }
 
-    /* Return if static website. We don't want to list the files in the
+  /* Return if static website. We don't want to list the files in the
        directory, we want to append the index page and get the fil. */
-    if (uriPath.endsWith(INDEX_PAGE)){
-        return '';
-    }
+  if (uriPath.endsWith(INDEX_PAGE)) {
+    return ''
+  }
 
-    let path = 'delimiter=%2F'
+  let path = 'delimiter=%2F'
 
-    if (uriPath !== '/') {
-        let decodedUriPath = decodeURIComponent(uriPath);
-        let without_leading_slash = decodedUriPath.charAt(0) === '/' ?
-            decodedUriPath.substring(1, decodedUriPath.length) : decodedUriPath;
-        path += '&prefix=' + _encodeURIComponent(without_leading_slash);
-    }
+  if (uriPath !== '/') {
+    let decodedUriPath = decodeURIComponent(uriPath)
+    let without_leading_slash =
+      decodedUriPath.charAt(0) === '/'
+        ? decodedUriPath.substring(1, decodedUriPath.length)
+        : decodedUriPath
+    path += '&prefix=' + _encodeURIComponent(without_leading_slash)
+  }
 
-    return path;
+  return path
 }
 
 /**
@@ -346,35 +373,38 @@ function _s3DirQueryParams(uriPath, method) {
  * @param r {NginxHTTPRequest} HTTP request object
  */
 function redirectToS3(r) {
-    // This is a read-only S3 gateway, so we do not support any other methods
-    if (!(r.method === 'GET' || r.method === 'HEAD')) {
-        utils.debug_log(r, 'Invalid method requested: ' + r.method);
-        r.internalRedirect("@error405");
-        return;
-    }
+  // This is a read-only S3 gateway, so we do not support any other methods
+  if (!(r.method === 'GET' || r.method === 'HEAD')) {
+    utils.debug_log(r, 'Invalid method requested: ' + r.method)
+    r.internalRedirect('@error405')
+    return
+  }
 
-    const uriPath = r.variables.uri_path;
-    const isDirectoryListing = ALLOW_LISTING && _isDirectory(uriPath);
+  const uriPath = r.variables.uri_path
+  const isDirectoryListing = ALLOW_LISTING && _isDirectory(uriPath)
 
-    if (isDirectoryListing && (r.method === 'GET' || r.method === 'HEAD')) {
-        r.internalRedirect("@s3PreListing");
-    } else if (PROVIDE_INDEX_PAGE === true) {
-        r.internalRedirect("@s3");
-    } else if (!ALLOW_LISTING && !PROVIDE_INDEX_PAGE && uriPath === "/") {
-       r.internalRedirect("@error404");
-    } else {
-        r.internalRedirect("@s3");
-    }
+  if (isDirectoryListing && (r.method === 'GET' || r.method === 'HEAD')) {
+    r.internalRedirect('@s3PreListing')
+  } else if (PROVIDE_INDEX_PAGE === true) {
+    r.internalRedirect('@s3')
+  } else if (!ALLOW_LISTING && !PROVIDE_INDEX_PAGE && uriPath === '/') {
+    r.internalRedirect('@error404')
+  } else {
+    r.internalRedirect('@s3')
+  }
 }
 
 function trailslashControl(r) {
-    if (APPEND_SLASH) {
-        const hasExtension = /\/[^.\/]+\.[^.]+$/;
-        if (!hasExtension.test(r.variables.uri_path)  && !_isDirectory(r.variables.uri_path)){
-            return r.internalRedirect("@trailslash");
-        }
+  if (APPEND_SLASH) {
+    const hasExtension = /\/[^.\/]+\.[^.]+$/
+    if (
+      !hasExtension.test(r.variables.uri_path) &&
+      !_isDirectory(r.variables.uri_path)
+    ) {
+      return r.internalRedirect('@trailslash')
     }
-        r.internalRedirect("@error404");
+  }
+  r.internalRedirect('@error404')
 }
 
 /**
@@ -385,24 +415,22 @@ function trailslashControl(r) {
  * @param {Object} r - The HTTP request object.
  */
 async function loadContent(r) {
-    if (!PROVIDE_INDEX_PAGE) {
-        r.internalRedirect("@s3Directory");
-        return;
-    }
-    const uri = s3uri(r);
-    let reply = await ngx.fetch(
-        `http://127.0.0.1:80${uri}`
-    );
+  if (!PROVIDE_INDEX_PAGE) {
+    r.internalRedirect('@s3Directory')
+    return
+  }
+  const uri = s3uri(r)
+  let reply = await ngx.fetch(`http://127.0.0.1:80${uri}`)
 
-    if (reply.status === 200) {
-        utils.debug_log(r, `Found index file, redirecting to: ${uri}`);
-        r.internalRedirect(uri);
-    } else if (reply.status === 404) {
-        // As there was no index file found, just list the contents of the directory
-        r.internalRedirect("@s3Directory");
-    } else {
-        r.internalRedirect("@error500");
-    }
+  if (reply.status === 200) {
+    utils.debug_log(r, `Found index file, redirecting to: ${uri}`)
+    r.internalRedirect(uri)
+  } else if (reply.status === 404) {
+    // As there was no index file found, just list the contents of the directory
+    r.internalRedirect('@s3Directory')
+  } else {
+    r.internalRedirect('@error500')
+  }
 }
 
 /**
@@ -418,27 +446,27 @@ async function loadContent(r) {
  * @param flags {NginxHTTPSendBufferOptions} contains field that indicates that a chunk is last
  */
 function filterListResponse(r, data, flags) {
-    if (FOUR_O_FOUR_ON_EMPTY_BUCKET) {
-        let indexIsEmpty = utils.parseBoolean(r.variables.indexIsEmpty);
+  if (FOUR_O_FOUR_ON_EMPTY_BUCKET) {
+    let indexIsEmpty = utils.parseBoolean(r.variables.indexIsEmpty)
 
-        if (indexIsEmpty && data.indexOf('<Contents') >= 0) {
-            r.variables.indexIsEmpty = false;
-            indexIsEmpty = false;
-        }
-
-        if (indexIsEmpty && data.indexOf('<CommonPrefixes') >= 0) {
-            r.variables.indexIsEmpty = false;
-            indexIsEmpty = false;
-        }
-
-        if (flags.last && indexIsEmpty) {
-            r.sendBuffer('junk', flags);
-        } else {
-            r.sendBuffer(data, flags);
-        }
-    } else {
-        r.sendBuffer(data, flags);
+    if (indexIsEmpty && data.indexOf('<Contents') >= 0) {
+      r.variables.indexIsEmpty = false
+      indexIsEmpty = false
     }
+
+    if (indexIsEmpty && data.indexOf('<CommonPrefixes') >= 0) {
+      r.variables.indexIsEmpty = false
+      indexIsEmpty = false
+    }
+
+    if (flags.last && indexIsEmpty) {
+      r.sendBuffer('junk', flags)
+    } else {
+      r.sendBuffer(data, flags)
+    }
+  } else {
+    r.sendBuffer(data, flags)
+  }
 }
 
 /**
@@ -449,9 +477,10 @@ function filterListResponse(r, data, flags) {
  * @private
  */
 function _encodeURIComponent(string) {
-    return encodeURIComponent(string)
-        .replace(/[!*'()]/g, (c) =>
-            `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return encodeURIComponent(string).replace(
+    /[!*'()]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+  )
 }
 
 /**
@@ -463,15 +492,15 @@ function _encodeURIComponent(string) {
  * @private
  */
 function _escapeURIPath(uri) {
-    // Check to see if the URI path was already encoded. If so, we decode it.
-    let decodedUri = (uri.indexOf('%') >= 0) ? decodeURIComponent(uri) : uri;
-    let components = [];
+  // Check to see if the URI path was already encoded. If so, we decode it.
+  let decodedUri = uri.indexOf('%') >= 0 ? decodeURIComponent(uri) : uri
+  let components = []
 
-    decodedUri.split('/').forEach(function (item, i) {
-        components[i] = _encodeURIComponent(item);
-    });
+  decodedUri.split('/').forEach(function (item, i) {
+    components[i] = _encodeURIComponent(item)
+  })
 
-    return components.join('/');
+  return components.join('/')
 }
 
 /**
@@ -483,16 +512,16 @@ function _escapeURIPath(uri) {
  * @private
  */
 function _isDirectory(path) {
-    if (path === undefined) {
-        return false;
-    }
-    const len = path.length;
+  if (path === undefined) {
+    return false
+  }
+  const len = path.length
 
-    if (len < 1) {
-        return false;
-    }
+  if (len < 1) {
+    return false
+  }
 
-    return path.charAt(len - 1) === '/';
+  return path.charAt(len - 1) === '/'
 }
 
 /**
@@ -502,27 +531,27 @@ function _isDirectory(path) {
  * @private
  */
 function _requireEnvVars(envVarName) {
-    const isSet = envVarName in process.env;
+  const isSet = envVarName in process.env
 
-    if (!isSet) {
-        throw(`Required environment variable ${envVarName} is missing`);
-    }
+  if (!isSet) {
+    throw `Required environment variable ${envVarName} is missing`
+  }
 }
 
 export default {
-    s3date,
-    s3auth,
-    s3uri,
-    trailslashControl,
-    redirectToS3,
-    editHeaders,
-    filterListResponse,
-    loadContent,
-    // These functions do not need to be exposed, but they are exposed so that
-    // unit tests can run against them.
-    _s3ReqParamsForSigV2,
-    _s3ReqParamsForSigV4,
-    _encodeURIComponent,
-    _escapeURIPath,
-    _isHeaderToBeStripped
-};
+  s3date,
+  s3auth,
+  s3uri,
+  trailslashControl,
+  redirectToS3,
+  editHeaders,
+  filterListResponse,
+  loadContent,
+  // These functions do not need to be exposed, but they are exposed so that
+  // unit tests can run against them.
+  _s3ReqParamsForSigV2,
+  _s3ReqParamsForSigV4,
+  _encodeURIComponent,
+  _escapeURIPath,
+  _isHeaderToBeStripped,
+}
