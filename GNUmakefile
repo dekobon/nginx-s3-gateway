@@ -23,11 +23,22 @@ help:
 test: ## Run all tests
 	$Q $(CURDIR)/test.sh --type oss --unprivileged false --latest-njs false
 
-out:
-	$(CURDIR)/node_modules/jsdoc/jsdoc.js -c $(CURDIR)/jsdoc/conf.json || true
+.PHONY: node_modules
+node_modules: ## Install node_modules
+	npm install
 
 .PHONY: jsdoc
-jsdoc: out ## Build JSDoc output
+jsdoc: ## Build JSDoc output
+	npm run docs || true
+
+.PHONY: jslint
+jslint: ## Run jslint
+	npm run eslint
+
+.PHONY: prettier
+prettier: ## Run JS prettier
+	npm run prettier
+
 
 .PHONY: clean
 clean: ## Clean up build artifacts
