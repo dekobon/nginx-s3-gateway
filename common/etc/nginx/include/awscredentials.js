@@ -112,7 +112,10 @@ function readCredentials(r) {
       expiration: null,
     }
   }
-  if ('variables' in r && r.variables.cache_instance_credentials_enabled == 1) {
+  if (
+    'variables' in r &&
+    r.variables.cache_instance_credentials_enabled == '1'
+  ) {
     return _readCredentialsFromKeyValStore(r)
   } else {
     return _readCredentialsFromFile()
@@ -157,7 +160,7 @@ function _readCredentialsFromFile() {
 
   try {
     const creds = fs.readFileSync(credsFilePath)
-    return JSON.parse(creds)
+    return JSON.parse(creds.toString())
   } catch (e) {
     /* Do not throw an exception in the case of when the
            credentials file path is invalid in order to signal to
@@ -206,7 +209,10 @@ function writeCredentials(r, credentials) {
     throw `Cannot write invalid credentials: ${JSON.stringify(credentials)}`
   }
 
-  if ('variables' in r && r.variables.cache_instance_credentials_enabled == 1) {
+  if (
+    'variables' in r &&
+    r.variables.cache_instance_credentials_enabled == '1'
+  ) {
     _writeCredentialsToKeyValStore(r, credentials)
   } else {
     _writeCredentialsToFile(credentials)
@@ -352,6 +358,8 @@ async function _fetchEcsRoleCredentials(credentialsUri) {
   if (!resp.ok) {
     throw 'Credentials endpoint response was not ok.'
   }
+
+  /** @type {any} */
   const creds = await resp.json()
 
   return {
@@ -395,6 +403,7 @@ async function _fetchEC2RoleCredentials() {
       'x-aws-ec2-metadata-token': token,
     },
   })
+  /** @type {any} */
   const creds = await resp.json()
 
   return {
@@ -453,7 +462,9 @@ async function _fetchWebIdentityCredentials(_r) {
     method: 'GET',
   })
 
+  /** @type {any} */
   const resp = await response.json()
+
   const creds =
     resp.AssumeRoleWithWebIdentityResponse.AssumeRoleWithWebIdentityResult
       .Credentials

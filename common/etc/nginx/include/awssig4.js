@@ -18,6 +18,7 @@
 /**
  * @module awssig4
  * @alias AwsSig4
+ * @typedef {import('./awscredentials.js').Credentials} Credentials
  */
 
 import awscred from './awscredentials.js'
@@ -189,7 +190,7 @@ function _buildSignatureV4(
    * operations that have to be performed per incoming request. The signing
    * key expires every day, so our cache key can persist for 24 hours safely.
    */
-  if ('variables' in r && r.variables.cache_signing_key_enabled == 1) {
+  if ('variables' in r && r.variables.cache_signing_key_enabled == '1') {
     // cached value is in the format: [eightDigitDate]:[signingKeyHash]
     const cached =
       'signing_key_hash' in r.variables ? r.variables.signing_key_hash : ''
@@ -306,7 +307,7 @@ function _signedHeaders(r, sessionToken) {
  * @param eightDigitDate {string} date in the form of 'YYYYMMDD'
  * @param region {string} region associated with server API
  * @param service {string} name of service that request is for e.g. s3, lambda
- * @returns {ArrayBuffer} signing HMAC
+ * @returns {Buffer} signing HMAC
  * @private
  */
 function _buildSigningKeyHash(kSecret, eightDigitDate, region, service) {
@@ -376,7 +377,7 @@ function awsHeaderDate(_r) {
 function awsHeaderPayloadHash(r) {
   const reqBody = r.variables.request_body ? r.variables.request_body : ''
   const payloadHash = mod_hmac
-    .createHash('sha256', 'utf8')
+    .createHash('sha256')
     .update(reqBody)
     .digest('hex')
   return payloadHash

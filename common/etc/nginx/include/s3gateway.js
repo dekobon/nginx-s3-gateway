@@ -23,9 +23,9 @@
 /**
  * @typedef {Object} S3ReqParams
  * @property {string} uri - URI to use for S3 request
- * @property {string|undefined} httpDate - RFC2616 timestamp used to sign the request
- * @property {string|undefined} host - S3 host to use for request
- * @property {string|undefined} queryParams - query parameters to use with S3 request
+ * @property {string|undefined} [httpDate] - RFC2616 timestamp used to sign the request
+ * @property {string|undefined} [host] - S3 host to use for request
+ * @property {string|undefined} [queryParams] - query parameters to use with S3 request
  */
 
 import awscred from './awscredentials.js'
@@ -449,13 +449,13 @@ function filterListResponse(r, data, flags) {
   if (FOUR_O_FOUR_ON_EMPTY_BUCKET) {
     let indexIsEmpty = utils.parseBoolean(r.variables.indexIsEmpty)
 
-    if (indexIsEmpty && data.indexOf('<Contents') >= 0) {
-      r.variables.indexIsEmpty = false
+    if (indexIsEmpty && data.toString().indexOf('<Contents') >= 0) {
+      r.variables.indexIsEmpty = 'false'
       indexIsEmpty = false
     }
 
-    if (indexIsEmpty && data.indexOf('<CommonPrefixes') >= 0) {
-      r.variables.indexIsEmpty = false
+    if (indexIsEmpty && data.toString().indexOf('<CommonPrefixes') >= 0) {
+      r.variables.indexIsEmpty = 'false'
       indexIsEmpty = false
     }
 

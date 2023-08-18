@@ -18,6 +18,7 @@
 /**
  * @module awssig2
  * @alias AwsSig2
+ * @typedef {import('./awscredentials.js').Credentials} Credentials
  */
 
 import utils from './utils.js'
