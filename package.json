@@ -11,7 +11,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "jsdoc": "^4.0.2",
-    "njs-types": "^0.8",
+    "njs-types": "^0.7.12",
     "prettier": "^2.8.8"
   }
 }
