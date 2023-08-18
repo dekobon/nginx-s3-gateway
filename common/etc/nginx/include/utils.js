@@ -25,7 +25,7 @@
  * about signature generation will be logged.
  * @type {boolean}
  */
-const DEBUG = parseBoolean(process.env['DEBUG'])
+const DEBUG = parseBoolean(process.env['DEBUG']);
 
 /**
  * Checks to see if all the elements of the passed array are present as keys
@@ -36,15 +36,15 @@ const DEBUG = parseBoolean(process.env['DEBUG'])
  */
 function areAllEnvVarsSet(envVars) {
   if (envVars instanceof Array) {
-    const envVarsLen = envVars.length
+    const envVarsLen = envVars.length;
     for (let i = 0; i < envVarsLen; i++) {
       if (!process.env[envVars[i]]) {
-        return false
+        return false;
       }
     }
-    return true
+    return true;
   }
-  return envVars in process.env
+  return envVars in process.env;
 }
 
 /**
@@ -54,15 +54,15 @@ function areAllEnvVarsSet(envVars) {
  */
 function parseArray(string) {
   if (string == null || !string || string === ';') {
-    return []
+    return [];
   }
 
   // Exclude trailing delimiter
   if (string.endsWith(';')) {
-    return string.substr(0, string.length - 1).split(';')
+    return string.substr(0, string.length - 1).split(';');
   }
 
-  return string.split(';')
+  return string.split(';');
 }
 
 /**
@@ -81,9 +81,9 @@ function parseBoolean(string) {
     case 'yes':
     case 'Yes':
     case '1':
-      return true
+      return true;
     default:
-      return false
+      return false;
   }
 }
 
@@ -95,7 +95,7 @@ function parseBoolean(string) {
  */
 function debug_log(r, msg) {
   if (DEBUG && 'log' in r) {
-    r.log(msg)
+    r.log(msg);
   }
 }
 
@@ -108,8 +108,8 @@ function debug_log(r, msg) {
  * @private
  */
 function padWithLeadingZeros(num, size) {
-  const s = '0' + num
-  return s.substr(s.length - size)
+  const s = '0' + num;
+  return s.substr(s.length - size);
 }
 
 /**
@@ -123,9 +123,9 @@ function padWithLeadingZeros(num, size) {
  * @private
  */
 function getAmzDatetime(timestamp, eightDigitDate) {
-  const hours = timestamp.getUTCHours()
-  const minutes = timestamp.getUTCMinutes()
-  const seconds = timestamp.getUTCSeconds()
+  const hours = timestamp.getUTCHours();
+  const minutes = timestamp.getUTCMinutes();
+  const seconds = timestamp.getUTCSeconds();
 
   return ''.concat(
     eightDigitDate,
@@ -134,7 +134,7 @@ function getAmzDatetime(timestamp, eightDigitDate) {
     padWithLeadingZeros(minutes, 2),
     padWithLeadingZeros(seconds, 2),
     'Z'
-  )
+  );
 }
 
 /**
@@ -145,15 +145,15 @@ function getAmzDatetime(timestamp, eightDigitDate) {
  * @private
  */
 function getEightDigitDate(timestamp) {
-  const year = timestamp.getUTCFullYear()
-  const month = timestamp.getUTCMonth() + 1
-  const day = timestamp.getUTCDate()
+  const year = timestamp.getUTCFullYear();
+  const month = timestamp.getUTCMonth() + 1;
+  const day = timestamp.getUTCDate();
 
   return ''.concat(
     padWithLeadingZeros(year, 4),
     padWithLeadingZeros(month, 2),
     padWithLeadingZeros(day, 2)
-  )
+  );
 }
 
 /**
@@ -163,10 +163,10 @@ function getEightDigitDate(timestamp) {
  * @private
  */
 function requireEnvVar(envVarName) {
-  const isSet = envVarName in process.env
+  const isSet = envVarName in process.env;
 
   if (!isSet) {
-    throw 'Required environment variable ' + envVarName + ' is missing'
+    throw 'Required environment variable ' + envVarName + ' is missing';
   }
 }
 
@@ -179,4 +179,4 @@ export default {
   parseArray,
   parseBoolean,
   requireEnvVar,
-}
+};

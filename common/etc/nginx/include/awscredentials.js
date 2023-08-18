@@ -28,37 +28,37 @@
  * @property {string | null} expiration - Expiration timestamp of the credentials
  */
 
-import utils from './utils.js'
+import utils from './utils.js';
 
-import fs from 'fs'
+import fs from 'fs';
 
 /**
  * The current moment as a timestamp. This timestamp will be used across
  * functions in order for there to be no variations in signatures.
  * @type {Date}
  */
-const NOW = new Date()
+const NOW = new Date();
 
 /**
  * Constant base URI to fetch credentials together with the credentials relative URI, see
  * https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html for more details.
  * @type {string}
  */
-const ECS_CREDENTIAL_BASE_URI = 'http://169.254.170.2'
+const ECS_CREDENTIAL_BASE_URI = 'http://169.254.170.2';
 
 /**
  * URL to EC2 Instance Metadata Service (IMDS) token endpoint
  * @see {@link https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html| EC2 Instance Metadata Service}
  * @type {string}
  */
-const EC2_IMDS_TOKEN_ENDPOINT = 'http://169.254.169.254/latest/api/token'
+const EC2_IMDS_TOKEN_ENDPOINT = 'http://169.254.169.254/latest/api/token';
 
 /**
  * URL to EC2 Instance Metadata Service (IMDS) security credentials endpoint
  * @type {string}
  */
 const EC2_IMDS_SECURITY_CREDENTIALS_ENDPOINT =
-  'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
+  'http://169.254.169.254/latest/meta-data/iam/security-credentials/';
 
 /**
  * Offset to the expiration of credentials, when they should be considered expired and refreshed. The maximum
@@ -70,7 +70,7 @@ const EC2_IMDS_SECURITY_CREDENTIALS_ENDPOINT =
  *
  * @type {number}
  */
-const maxValidityOffsetMs = 4.5 * 60 * 1000
+const maxValidityOffsetMs = 4.5 * 60 * 1000;
 
 /**
  * Get the current session token from either the instance profile credential
@@ -80,11 +80,11 @@ const maxValidityOffsetMs = 4.5 * 60 * 1000
  * @returns {string} current session token or empty string
  */
 function sessionToken(r) {
-  const credentials = readCredentials(r)
+  const credentials = readCredentials(r);
   if (credentials.sessionToken) {
-    return credentials.sessionToken
+    return credentials.sessionToken;
   }
-  return ''
+  return '';
 }
 
 /**
@@ -101,24 +101,24 @@ function readCredentials(r) {
     let sessionToken =
       'AWS_SESSION_TOKEN' in process.env
         ? process.env['AWS_SESSION_TOKEN']
-        : null
+        : null;
     if (sessionToken !== null && sessionToken.length === 0) {
-      sessionToken = null
+      sessionToken = null;
     }
     return {
       accessKeyId: process.env['AWS_ACCESS_KEY_ID'],
       secretAccessKey: process.env['AWS_SECRET_ACCESS_KEY'],
       sessionToken: sessionToken,
       expiration: null,
-    }
+    };
   }
   if (
     'variables' in r &&
     r.variables.cache_instance_credentials_enabled == '1'
   ) {
-    return _readCredentialsFromKeyValStore(r)
+    return _readCredentialsFromKeyValStore(r);
   } else {
-    return _readCredentialsFromFile()
+    return _readCredentialsFromFile();
   }
 }
 
@@ -131,20 +131,20 @@ function readCredentials(r) {
  * @private
  */
 function _readCredentialsFromKeyValStore(r) {
-  const cached = r.variables.instance_credential_json
+  const cached = r.variables.instance_credential_json;
 
   if (!cached) {
-    return undefined
+    return undefined;
   }
 
   try {
-    return JSON.parse(cached)
+    return JSON.parse(cached);
   } catch (e) {
     utils.debug_log(
       r,
       `Error parsing JSON value from r.variables.instance_credential_json: ${e}`
-    )
-    return undefined
+    );
+    return undefined;
   }
 }
 
@@ -156,19 +156,19 @@ function _readCredentialsFromKeyValStore(r) {
  * @private
  */
 function _readCredentialsFromFile() {
-  const credsFilePath = _credentialsTempFile()
+  const credsFilePath = _credentialsTempFile();
 
   try {
-    const creds = fs.readFileSync(credsFilePath)
-    return JSON.parse(creds.toString())
+    const creds = fs.readFileSync(credsFilePath);
+    return JSON.parse(creds.toString());
   } catch (e) {
     /* Do not throw an exception in the case of when the
            credentials file path is invalid in order to signal to
            the caller that such a file has not been created yet. */
     if (e.code === 'ENOENT') {
-      return undefined
+      return undefined;
     }
-    throw e
+    throw e;
   }
 }
 
@@ -180,13 +180,13 @@ function _readCredentialsFromFile() {
  */
 function _credentialsTempFile() {
   if (process.env['AWS_CREDENTIALS_TEMP_FILE']) {
-    return process.env['AWS_CREDENTIALS_TEMP_FILE']
+    return process.env['AWS_CREDENTIALS_TEMP_FILE'];
   }
   if (process.env['TMPDIR']) {
-    return `${process.env['TMPDIR']}/credentials.json`
+    return `${process.env['TMPDIR']}/credentials.json`;
   }
 
-  return '/tmp/credentials.json'
+  return '/tmp/credentials.json';
 }
 
 /**
@@ -202,20 +202,20 @@ function writeCredentials(r, credentials) {
     process.env['AWS_ACCESS_KEY_ID'] &&
     process.env['AWS_SECRET_ACCESS_KEY']
   ) {
-    return
+    return;
   }
 
   if (!credentials) {
-    throw `Cannot write invalid credentials: ${JSON.stringify(credentials)}`
+    throw `Cannot write invalid credentials: ${JSON.stringify(credentials)}`;
   }
 
   if (
     'variables' in r &&
     r.variables.cache_instance_credentials_enabled == '1'
   ) {
-    _writeCredentialsToKeyValStore(r, credentials)
+    _writeCredentialsToKeyValStore(r, credentials);
   } else {
-    _writeCredentialsToFile(credentials)
+    _writeCredentialsToFile(credentials);
   }
 }
 
@@ -227,7 +227,7 @@ function writeCredentials(r, credentials) {
  * @private
  */
 function _writeCredentialsToKeyValStore(r, credentials) {
-  r.variables.instance_credential_json = JSON.stringify(credentials)
+  r.variables.instance_credential_json = JSON.stringify(credentials);
 }
 
 /**
@@ -239,7 +239,7 @@ function _writeCredentialsToKeyValStore(r, credentials) {
  * @private
  */
 function _writeCredentialsToFile(credentials) {
-  fs.writeFileSync(_credentialsTempFile(), JSON.stringify(credentials))
+  fs.writeFileSync(_credentialsTempFile(), JSON.stringify(credentials));
 }
 
 /**
@@ -263,18 +263,18 @@ async function fetchCredentials(r) {
   /* If we are not using an AWS instance profile to set our credentials we
        exit quickly and don't write a credentials file. */
   if (utils.areAllEnvVarsSet(['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'])) {
-    r.return(200)
-    return
+    r.return(200);
+    return;
   }
 
-  let current
+  let current;
 
   try {
-    current = readCredentials(r)
+    current = readCredentials(r);
   } catch (e) {
-    utils.debug_log(r, `Could not read credentials: ${e}`)
-    r.return(500)
-    return
+    utils.debug_log(r, `Could not read credentials: ${e}`);
+    r.return(500);
+    return;
   }
 
   if (current) {
@@ -283,66 +283,66 @@ async function fetchCredentials(r) {
     const expireAt =
       typeof current.expiration == 'number'
         ? current.expiration * 1000
-        : current.expiration
-    const exp = new Date(expireAt).getTime() - maxValidityOffsetMs
+        : current.expiration;
+    const exp = new Date(expireAt).getTime() - maxValidityOffsetMs;
     if (NOW.getTime() < exp) {
-      r.return(200)
-      return
+      r.return(200);
+      return;
     }
   }
 
-  let credentials
+  let credentials;
 
   utils.debug_log(
     r,
     'Cached credentials are expired or not present, requesting new ones'
-  )
+  );
 
   if (utils.areAllEnvVarsSet('AWS_CONTAINER_CREDENTIALS_RELATIVE_URI')) {
     const relative_uri =
-      process.env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI'] || ''
-    const uri = ECS_CREDENTIAL_BASE_URI + relative_uri
+      process.env['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI'] || '';
+    const uri = ECS_CREDENTIAL_BASE_URI + relative_uri;
     try {
-      credentials = await _fetchEcsRoleCredentials(uri)
+      credentials = await _fetchEcsRoleCredentials(uri);
     } catch (e) {
       utils.debug_log(
         r,
         'Could not load ECS task role credentials: ' + JSON.stringify(e)
-      )
-      r.return(500)
-      return
+      );
+      r.return(500);
+      return;
     }
   } else if (utils.areAllEnvVarsSet('AWS_WEB_IDENTITY_TOKEN_FILE')) {
     try {
-      credentials = await _fetchWebIdentityCredentials(r)
+      credentials = await _fetchWebIdentityCredentials(r);
     } catch (e) {
       utils.debug_log(
         r,
         'Could not assume role using web identity: ' + JSON.stringify(e)
-      )
-      r.return(500)
-      return
+      );
+      r.return(500);
+      return;
     }
   } else {
     try {
-      credentials = await _fetchEC2RoleCredentials()
+      credentials = await _fetchEC2RoleCredentials();
     } catch (e) {
       utils.debug_log(
         r,
         'Could not load EC2 task role credentials: ' + JSON.stringify(e)
-      )
-      r.return(500)
-      return
+      );
+      r.return(500);
+      return;
     }
   }
   try {
-    writeCredentials(r, credentials)
+    writeCredentials(r, credentials);
   } catch (e) {
-    utils.debug_log(r, `Could not write credentials: ${e}`)
-    r.return(500)
-    return
+    utils.debug_log(r, `Could not write credentials: ${e}`);
+    r.return(500);
+    return;
   }
-  r.return(200)
+  r.return(200);
 }
 
 /**
@@ -354,20 +354,20 @@ async function fetchCredentials(r) {
  * @private
  */
 async function _fetchEcsRoleCredentials(credentialsUri) {
-  const resp = await ngx.fetch(credentialsUri)
+  const resp = await ngx.fetch(credentialsUri);
   if (!resp.ok) {
-    throw 'Credentials endpoint response was not ok.'
+    throw 'Credentials endpoint response was not ok.';
   }
 
   /** @type {any} */
-  const creds = await resp.json()
+  const creds = await resp.json();
 
   return {
     accessKeyId: creds.AccessKeyId,
     secretAccessKey: creds.SecretAccessKey,
     sessionToken: creds.Token,
     expiration: creds.Expiration,
-  }
+  };
 }
 
 /**
@@ -383,35 +383,35 @@ async function _fetchEC2RoleCredentials() {
       'x-aws-ec2-metadata-token-ttl-seconds': '21600',
     },
     method: 'PUT',
-  })
-  const token = await tokenResp.text()
+  });
+  const token = await tokenResp.text();
   let resp = await ngx.fetch(EC2_IMDS_SECURITY_CREDENTIALS_ENDPOINT, {
     headers: {
       'x-aws-ec2-metadata-token': token,
     },
-  })
+  });
   /* This _might_ get multiple possible roles in other scenarios, however,
        EC2 supports attaching one role only.It should therefore be safe to take
        the whole output, even given IMDS _might_ (?) be able to return multiple
        roles. */
-  const credName = await resp.text()
+  const credName = await resp.text();
   if (credName === '') {
-    throw 'No credentials available for EC2 instance'
+    throw 'No credentials available for EC2 instance';
   }
   resp = await ngx.fetch(EC2_IMDS_SECURITY_CREDENTIALS_ENDPOINT + credName, {
     headers: {
       'x-aws-ec2-metadata-token': token,
     },
-  })
+  });
   /** @type {any} */
-  const creds = await resp.json()
+  const creds = await resp.json();
 
   return {
     accessKeyId: creds.AccessKeyId,
     secretAccessKey: creds.SecretAccessKey,
     sessionToken: creds.Token,
     expiration: creds.Expiration,
-  }
+  };
 }
 
 /**
@@ -422,10 +422,10 @@ async function _fetchEC2RoleCredentials() {
  * @private
  */
 async function _fetchWebIdentityCredentials(_r) {
-  const arn = process.env['AWS_ROLE_ARN']
-  const name = process.env['AWS_ROLE_SESSION_NAME']
+  const arn = process.env['AWS_ROLE_ARN'];
+  const name = process.env['AWS_ROLE_SESSION_NAME'];
 
-  let sts_endpoint = process.env['STS_ENDPOINT']
+  let sts_endpoint = process.env['STS_ENDPOINT'];
   if (!sts_endpoint) {
     /* On EKS, the ServiceAccount can be annotated with
            'eks.amazonaws.com/sts-regional-endpoints' to control
@@ -435,46 +435,46 @@ async function _fetchWebIdentityCredentials(_r) {
            the variable to.
            See: https://docs.aws.amazon.com/sdkref/latest/guide/feature-sts-regionalized-endpoints.html
            See: https://docs.aws.amazon.com/eks/latest/userguide/configure-sts-endpoint.html */
-    const sts_regional = process.env['AWS_STS_REGIONAL_ENDPOINTS'] || 'global'
+    const sts_regional = process.env['AWS_STS_REGIONAL_ENDPOINTS'] || 'global';
     if (sts_regional === 'regional') {
       /* STS regional endpoints can be derived from the region's name.
                See: https://docs.aws.amazon.com/general/latest/gr/sts.html */
-      const region = process.env['AWS_REGION']
+      const region = process.env['AWS_REGION'];
       if (region) {
-        sts_endpoint = `https://sts.${region}.amazonaws.com`
+        sts_endpoint = `https://sts.${region}.amazonaws.com`;
       } else {
-        throw 'Missing required AWS_REGION env variable'
+        throw 'Missing required AWS_REGION env variable';
       }
     } else {
       // This is the default global endpoint
-      sts_endpoint = 'https://sts.amazonaws.com'
+      sts_endpoint = 'https://sts.amazonaws.com';
     }
   }
 
-  const token = fs.readFileSync(process.env['AWS_WEB_IDENTITY_TOKEN_FILE'])
+  const token = fs.readFileSync(process.env['AWS_WEB_IDENTITY_TOKEN_FILE']);
 
-  const params = `Version=2011-06-15&Action=AssumeRoleWithWebIdentity&RoleArn=${arn}&RoleSessionName=${name}&WebIdentityToken=${token}`
+  const params = `Version=2011-06-15&Action=AssumeRoleWithWebIdentity&RoleArn=${arn}&RoleSessionName=${name}&WebIdentityToken=${token}`;
 
   const response = await ngx.fetch(sts_endpoint + '?' + params, {
     headers: {
       Accept: 'application/json',
     },
     method: 'GET',
-  })
+  });
 
   /** @type {any} */
-  const resp = await response.json()
+  const resp = await response.json();
 
   const creds =
     resp.AssumeRoleWithWebIdentityResponse.AssumeRoleWithWebIdentityResult
-      .Credentials
+      .Credentials;
 
   return {
     accessKeyId: creds.AccessKeyId,
     secretAccessKey: creds.SecretAccessKey,
     sessionToken: creds.SessionToken,
     expiration: creds.Expiration,
-  }
+  };
 }
 
 /**
@@ -484,7 +484,7 @@ async function _fetchWebIdentityCredentials(_r) {
  * @returns {Date} The current moment as a timestamp
  */
 function Now() {
-  return NOW
+  return NOW;
 }
 
 export default {
@@ -493,4 +493,4 @@ export default {
   readCredentials,
   sessionToken,
   writeCredentials,
-}
+};
