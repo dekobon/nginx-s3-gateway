@@ -1,8 +1,19 @@
 {
+  "scripts": {
+    "prettier": "npx prettier --check common/etc/nginx/include",
+    "prettier-fix": "npx prettier --check --write common/etc/nginx/include",
+    "eslint": "npx eslint .",
+    "eslint-fix": "npx eslint --fix .",
+    "docs": "npx jsdoc -c '.jsdocrc.json'"
+  },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
     "better-docs": "^2.7.2",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "jsdoc": "^4.0.2",
-    "njs-types": "^0.8",
-    "taffydb": "^2.7.3"
+    "njs-types": "^0.7.12",
+    "prettier": "^3.0.2"
   }
 }

@@ -18,11 +18,12 @@
 /**
  * @module awssig2
  * @alias AwsSig2
+ * @typedef {import('./awscredentials.js').Credentials} Credentials
  */
 
-import utils from "./utils.js";
+import utils from './utils.js';
 
-const mod_hmac = require('crypto');
+import * as mod_hmac from 'crypto';
 
 /**
  * Create HTTP Authorization header for authenticating with an AWS compatible
@@ -35,17 +36,17 @@ const mod_hmac = require('crypto');
  * @returns {string} HTTP Authorization header value
  */
 function signatureV2(r, uri, httpDate, credentials) {
-    const method = r.method;
-    const hmac = mod_hmac.createHmac('sha1', credentials.secretAccessKey);
-    const stringToSign = method + '\n\n\n' + httpDate + '\n' + uri;
+  const method = r.method;
+  const hmac = mod_hmac.createHmac('sha1', credentials.secretAccessKey);
+  const stringToSign = method + '\n\n\n' + httpDate + '\n' + uri;
 
-    utils.debug_log(r, 'AWS v2 Auth Signing String: [' + stringToSign + ']');
+  utils.debug_log(r, 'AWS v2 Auth Signing String: [' + stringToSign + ']');
 
-    const signature = hmac.update(stringToSign).digest('base64');
+  const signature = hmac.update(stringToSign).digest('base64');
 
-    return `AWS ${credentials.accessKeyId}:${signature}`;
+  return `AWS ${credentials.accessKeyId}:${signature}`;
 }
 
 export default {
-    signatureV2
-}
+  signatureV2,
+};
